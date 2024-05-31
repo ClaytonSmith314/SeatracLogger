@@ -14,7 +14,7 @@ if(NOT TARGET seatrac_driver)
     endif()
 endif()
 
-add_executable(ping_example
-    src/ping_example.cpp
+add_executable(seatrac_tests
+    src/seatrac_tests.cpp
 )
-target_link_libraries(ping_example PRIVATE seatrac_driver)
+target_link_libraries(seatrac_tests PRIVATE seatrac_driver)

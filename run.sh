@@ -1,2 +1,2 @@
 
-sudo ./build/ping_example $1
+sudo ./build/seatrac_tests $1
