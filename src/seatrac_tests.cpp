@@ -1,89 +1,70 @@
 #include <iostream>
 #include <stdio.h>
+#include <fstream>
+#include <time.h>
 
 #include <seatrac_driver/SeatracDriver.h>
 #include <seatrac_driver/messages/Messages.h>
 #include <seatrac_driver/commands.h>
 using namespace narval::seatrac;
 
-class MyDriver : public SeatracDriver
-{
-    public:
-
-    MyDriver(const std::string& serialPort = "/dev/ttyUSB0") :
-        SeatracDriver(serialPort)
-    {}
-
-    void ping_beacon(BID_E target, AMSGTYPE_E pingType = MSG_REQU) {
-        messages::PingSend::Request req;
-        req.target   = target;
-        req.pingType = pingType;
-
-        this->send(sizeof(req), (const uint8_t*)&req);
-    }
-
-    // this method is called on any message returned by the beacon.
-    void on_message(CID_E msgId, const std::vector<uint8_t>& data) {
-        //replace code in this method by your own
-        switch(msgId) {
-            default:
-                std::cout << "Got message : " << msgId << std::endl << std::flush;
-                break;
-
-            case CID_PING_RESP: {
-                    messages::PingResp response;        //struct that contains response fields
-                    response = data;                    //operator overload fills in response struct with correct data
-                    std::cout << response << std::endl; //operator overload prints out response data
-
-                    //sends another ping to the other beacon, creating a feedback loop between ping sends and ping responses
-                    this->ping_beacon(response.acoFix.srcId, MSG_REQU);
-
-                } break;
-            case CID_PING_ERROR: {
-                    messages::PingError response;
-                    response = data;
-                    std::cout << response << std::endl;
-
-                    this->ping_beacon(response.beaconId, MSG_REQU);
-
-                } break;
-            case CID_PING_SEND: {
-                    messages::PingSend response;
-                    response = data;
-                    std::cout << response << std::endl;
-                }
-
-            case CID_DAT_RECEIVE: {               
-                    messages::DataReceive response;
-                    response = data;
-                    std::cout << response << std::endl; 
-                } break;
-            case CID_DAT_ERROR: {
-                    messages::DataError response;
-                    response = data;
-                    std::cout << response << std::endl;
-                } break;
-
-            case CID_STATUS:
-                // too many STATUS messages so bypassing display.
-                break;
-        }
-
-    }
-};
-
 int main(int argc, char *argv[])
 {
 
+    std::string test_name = "DummyTest";
+
+    //TODO: either make these values editable by the command line or use #define 
+    BID_E this_BID  = BEACON_ID_1;
+    BID_E other_BID = BEACON_ID_2;
+    float this_beacon_depth = 1; //TODO: units
+    float other_beacon_depth = 1;
+    float horizontal_distance = 1;
+    int num_samples = 500;
+    //TODO: add a header to the file with all this info in it.
+
     std::string serial_port;
-    if (argc == 1) { serial_port = "/dev/ttyUSB0"; }
-    else { serial_port = argv[1]; }
+    std::string out_file_path;
+    switch(argc) {
+        case 1: { serial_port = "/dev/ttyUSB0"; out_file_path = "./data/output.csv"; } break;
+        case 2: { serial_port = argv[1]; out_file_path = "./data/output.csv"; } break;
+        default: { serial_port = argv[1]; out_file_path = argv[2];} break;
+    }
 
-    MyDriver seatrac(serial_port);    
+    std::ofstream output(out_file_path);
+    SeatracDriver seatrac(serial_port);
 
-    seatrac.ping_beacon(BEACON_ID_15, MSG_REQU);
+    command::set_beacon_id(seatrac, this_BID);
 
-    getchar();
+    output << "time, msg#, src_id, dest_id, yaw, pitch, roll, local_depth, VOS, RSSI, USBL_RSSI, range, azimuth, elevation\n";
+
+    for(int i=0; i<num_samples; i++) {
+        command::data_send(
+            seatrac, 
+            other_BID, 
+            MSG_REQU, 
+            (uint8_t)4, 
+            (uint8_t*)&i
+        );
+        messages::DataReceive resp;
+        seatrac.wait_for_message(CID_DAT_RECEIVE, &resp);
+        output << "TIME" << ", " 
+               << i << ", " 
+               << resp.acoFix.srcId << ", "
+               << resp.acoFix.destId << ", "
+               << resp.acoFix.attitudeYaw << ", "
+               << resp.acoFix.attitudePitch << ", "
+               << resp.acoFix.attitudeRoll << ", "
+               << resp.acoFix.depthLocal << ", "
+               << resp.acoFix.vos << ", "
+               << resp.acoFix.rssi << ", "
+               << resp.acoFix.usbl.rssi << ", "
+               << resp.acoFix.range.dist << ", "
+               << resp.acoFix.usbl.azimuth << ", "
+               << resp.acoFix.usbl.elevation << "\n";
+
+    }
+    
+    output.close();
 
     return 0;
 }
