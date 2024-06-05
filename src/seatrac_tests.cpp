@@ -14,12 +14,12 @@ int main(int argc, char *argv[])
     std::string test_name = "DummyTest";
 
     //TODO: either make these values editable by the command line or use #define 
-    BID_E this_BID  = BEACON_ID_1;
-    BID_E other_BID = BEACON_ID_2;
+    BID_E this_BID  = BEACON_ID_10;
+    BID_E other_BID = BEACON_ID_1;
     float this_beacon_depth = 1; //TODO: units
     float other_beacon_depth = 1;
     float horizontal_distance = 1;
-    int num_samples = 500;
+    int num_samples = 5;
     //TODO: add a header to the file with all this info in it.
 
     std::string serial_port;
@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
     std::ofstream output(out_file_path);
     SeatracDriver seatrac(serial_port);
 
-    command::set_beacon_id(seatrac, this_BID);
+    //command::set_beacon_id(seatrac, this_BID);
 
-    output << "time, msg#, src_id, dest_id, yaw, pitch, roll, local_depth, VOS, RSSI, USBL_RSSI, range, azimuth, elevation\n";
+    output << "time, msg#, src_id, dest_id, yaw, pitch, roll, local_depth, VOS, RSSI, range, azimuth, elevation\n";
 
     for(int i=0; i<num_samples; i++) {
         command::data_send(
@@ -57,11 +57,13 @@ int main(int argc, char *argv[])
                << resp.acoFix.depthLocal << ", "
                << resp.acoFix.vos << ", "
                << resp.acoFix.rssi << ", "
-               << resp.acoFix.usbl.rssi << ", "
+               //<< resp.acoFix.usbl.rssi << ", "
                << resp.acoFix.range.dist << ", "
                << resp.acoFix.usbl.azimuth << ", "
                << resp.acoFix.usbl.elevation << "\n";
 
+        //Comment this out if the other beacon isn't responding to messages
+        seatrac.wait_for_message(CID_DAT_RECEIVE, &resp);
     }
     
     output.close();
