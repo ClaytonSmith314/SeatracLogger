@@ -49,8 +49,8 @@ int main(int argc, char *argv[])
         seatrac.wait_for_message(CID_DAT_RECEIVE, &resp);
         output << "TIME" << ", " 
                << i << ", " 
-               << resp.acoFix.srcId << ", "
-               << resp.acoFix.destId << ", "
+               << (uint8_t)resp.acoFix.srcId << ", "
+               << (uint8_t)resp.acoFix.destId << ", "
                << resp.acoFix.attitudeYaw << ", "
                << resp.acoFix.attitudePitch << ", "
                << resp.acoFix.attitudeRoll << ", "
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
                << resp.acoFix.usbl.azimuth << ", "
                << resp.acoFix.usbl.elevation << "\n";
 
-        //Comment this out if the other beacon isn't responding to messages
+        //Comment this out if the other beacon won't be sending messages
         seatrac.wait_for_message(CID_DAT_RECEIVE, &resp);
     }
     
