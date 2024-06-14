@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 
     //command::set_beacon_id(seatrac, this_BID);
 
-    output << "time, msg#, src_id, dest_id, yaw, pitch, roll, local_depth, VOS, RSSI, range, azimuth, elevation\n";
+    output << "time, msg#, src_id, dest_id, flags, yaw, pitch, roll, local_depth, VOS, RSSI, range, azimuth, elevation, easting, northing, depth\n";
 
     for(int i=0; i<num_samples; i++) {
         command::data_send(
@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
                << i << ", " 
                << (uint8_t)resp.acoFix.srcId << ", "
                << (uint8_t)resp.acoFix.destId << ", "
+               << resp.acoFix.flags << ", "
                << resp.acoFix.attitudeYaw << ", "
                << resp.acoFix.attitudePitch << ", "
                << resp.acoFix.attitudeRoll << ", "
@@ -60,7 +61,11 @@ int main(int argc, char *argv[])
                //<< resp.acoFix.usbl.rssi << ", "
                << resp.acoFix.range.dist << ", "
                << resp.acoFix.usbl.azimuth << ", "
-               << resp.acoFix.usbl.elevation << "\n";
+               << resp.acoFix.usbl.elevation << ", "
+               << resp.acoFix.usbl.fitError << ", "
+               << resp.acoFix.position.easting << ", "
+               << resp.acoFix.position.northing << ", "
+               << resp.acoFix.position.depth << "\n";
 
         //Comment this out if the other beacon won't be sending messages
         seatrac.wait_for_message(CID_DAT_RECEIVE, &resp);
