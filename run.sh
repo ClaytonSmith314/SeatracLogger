@@ -1,2 +1,2 @@
 
-sudo ./build/seatrac_tests $1
+sudo ./build/seatrac_logger $1

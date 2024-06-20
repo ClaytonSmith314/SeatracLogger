@@ -1,3 +1,5 @@
 build
 .vscode
 **/*.csv
+/logger_configurations
+/logger_data
